@@ -12,7 +12,6 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.17",
-    "@types/tgwf__co2": "^0.14.2",
     "tsx": "^4.7.1"
   }
 }

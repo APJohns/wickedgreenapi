@@ -1,9 +1,7 @@
 import lighthouse from 'lighthouse';
-import * as chromeLauncher from 'chrome-launcher';
 import puppeteer from 'puppeteer';
 
 export default async function getTransferSize(url: string) {
-  // const chrome = await chromeLauncher.launch({ chromeFlags: ['--headless'] });
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.setViewport({
@@ -15,9 +13,7 @@ export default async function getTransferSize(url: string) {
     {
       logLevel: 'error',
       output: 'json',
-      // onlyCategories: ['performance'],
       onlyAudits: ['network-requests'],
-      // port: chrome.port,
       screenEmulation: {
         width: 1900,
         height: 1000,

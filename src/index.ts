@@ -1,8 +1,11 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import getTransferSize from './getTransferSize.js';
 
 const app = new Hono();
+
+app.use('/api', cors());
 
 // https://sustainablewebdesign.org/estimating-digital-emissions/
 
@@ -23,7 +26,7 @@ const NEW_VISITOR_RATIO = 1;
 const RETURN_VISITOR_RATIO = 0;
 const DATA_CACHE_RATIO = 0.02;
 
-app.get('/', async (c) => {
+app.get('/api', async (c) => {
   const url = c.req.query('url');
   if (url) {
     const transferBytes = await getTransferSize(url);

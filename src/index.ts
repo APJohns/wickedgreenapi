@@ -1,11 +1,14 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { bearerAuth } from 'hono/bearer-auth';
 import getTransferSize from './getTransferSize.js';
+import 'dotenv/config';
 
 const app = new Hono();
 
 app.use('/api', cors());
+app.use('/api', bearerAuth({ token: process.env.TOKEN as string }));
 
 // https://sustainablewebdesign.org/estimating-digital-emissions/
 

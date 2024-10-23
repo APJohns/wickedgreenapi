@@ -37,9 +37,6 @@ app.get('/', async (c) => {
     const EMN = transferGb * ENERGY_INTENSITY_EMN * GRID_CARBON_INTENSITY;
     const EMUD = transferGb * ENERGY_INTENSITY_EMUD * GRID_CARBON_INTENSITY;
 
-    const em =
-      (OPDC * (1 - GREEN_HOSTING_FACTOR) + OPN + OPUD) * NEW_VISITOR_RATIO +
-      (OPDC * (1 - GREEN_HOSTING_FACTOR) + OPN + OPUD) * RETURN_VISITOR_RATIO * (1 - DATA_CACHE_RATIO);
     const total =
       (OPDC * (1 - GREEN_HOSTING_FACTOR) + EMDC + (OPN + EMN) + (OPUD + EMUD)) * NEW_VISITOR_RATIO +
       (OPDC * (1 - GREEN_HOSTING_FACTOR) + EMDC + (OPN + EMN) + (OPUD + EMUD)) *

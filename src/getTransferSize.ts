@@ -2,7 +2,7 @@ import lighthouse from 'lighthouse';
 import puppeteer from 'puppeteer';
 
 export default async function getTransferSize(url: string) {
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
   await page.setViewport({
     width: 1900,

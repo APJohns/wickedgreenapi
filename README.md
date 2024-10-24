@@ -1,6 +1,6 @@
 ```
-bunx puppeteer browsers install chrome
 bun install
+bunx puppeteer browsers install chrome
 bun run dev
 ```
 

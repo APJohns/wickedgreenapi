@@ -1,6 +1,7 @@
 ```
-npm install
-npm run dev
+bunx puppeteer browsers install chrome
+bun install
+bun run dev
 ```
 
 ```

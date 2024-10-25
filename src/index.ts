@@ -2,57 +2,48 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { bearerAuth } from 'hono/bearer-auth';
+import { co2 } from '@tgwf/co2';
 import getTransferSize from './getTransferSize.js';
 import 'dotenv/config';
 
+interface SWDOptions {
+  dataReloadRatio?: number;
+  firstVisitPercentage?: number;
+  returnVisitPercentage?: number;
+  greenHostingFactor?: number;
+  girdIntensity?: {
+    device?: number;
+    dataCenter?: number;
+    networks?: number;
+  };
+}
+
 const app = new Hono();
 
-app.use('/api', cors());
-app.use('/api', bearerAuth({ token: process.env.TOKEN as string }));
+app.use('/*', cors());
+app.use('/*', bearerAuth({ token: process.env.TOKEN as string }));
 
 // https://sustainablewebdesign.org/estimating-digital-emissions/
-
-// Operational
-const GRID_CARBON_INTENSITY = 494; // gCO2e/kWh
-const ENERGY_INTENSITY_OPDC = 0.055; // kWh/GB
-const ENERGY_INTENSITY_OPN = 0.059; // kWh/GB
-const ENERGY_INTENSITY_OPUD = 0.08; // kWh/GB
-
-// Embodied
-const ENERGY_INTENSITY_EMDC = 0.012; // kWh/GB
-const ENERGY_INTENSITY_EMN = 0.013; // kWh/GB
-const ENERGY_INTENSITY_EMUD = 0.081; // kWh/GB
-
-// Model Variables
-const GREEN_HOSTING_FACTOR = 0;
-const NEW_VISITOR_RATIO = 1;
-const RETURN_VISITOR_RATIO = 0;
-const DATA_CACHE_RATIO = 0.02;
-
-app.get('/api', async (c) => {
+app.get('/carbon', async (c) => {
   const url = c.req.query('url');
   if (url) {
+    // Get size of transferred files
     const transferBytes = await getTransferSize(url);
-    const transferGb = transferBytes / 10e8;
 
-    const OPDC = transferGb * ENERGY_INTENSITY_OPDC * GRID_CARBON_INTENSITY;
-    const OPN = transferGb * ENERGY_INTENSITY_OPN * GRID_CARBON_INTENSITY;
-    const OPUD = transferGb * ENERGY_INTENSITY_OPUD * GRID_CARBON_INTENSITY;
+    // Check if host is green
+    const domain = new URL(url);
+    const res = await fetch(`https://api.thegreenwebfoundation.org/greencheck/${domain.host.replace('www.', '')}`);
+    const greenCheck = await res.json();
 
-    const EMDC = transferGb * ENERGY_INTENSITY_EMDC * GRID_CARBON_INTENSITY;
-    const EMN = transferGb * ENERGY_INTENSITY_EMN * GRID_CARBON_INTENSITY;
-    const EMUD = transferGb * ENERGY_INTENSITY_EMUD * GRID_CARBON_INTENSITY;
-
-    const total =
-      (OPDC * (1 - GREEN_HOSTING_FACTOR) + EMDC + (OPN + EMN) + (OPUD + EMUD)) * NEW_VISITOR_RATIO +
-      (OPDC * (1 - GREEN_HOSTING_FACTOR) + EMDC + (OPN + EMN) + (OPUD + EMUD)) *
-        RETURN_VISITOR_RATIO *
-        (1 - DATA_CACHE_RATIO);
-
-    return c.json({
-      transferSize: transferBytes,
-      carbon: total,
-    });
+    // Get carbon estimate
+    const carbon = new co2({ model: 'swd', version: 4 });
+    const options: SWDOptions = {
+      dataReloadRatio: 0.02,
+      firstVisitPercentage: 1,
+      returnVisitPercentage: 0,
+    };
+    const estimate = carbon.perVisitTrace(transferBytes, greenCheck.green, options);
+    return c.json(estimate);
   } else {
     return c.body('Invalid url parameter', 400);
   }

@@ -1,5 +1,5 @@
 {
-  "name": "greenerweb",
+  "name": "greenerweb-api",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",

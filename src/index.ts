@@ -40,7 +40,7 @@ app.get('/carbon', async (c) => {
     console.log('greenCheck', greenCheck);
 
     // Get carbon estimate
-    const carbon = new co2({ model: 'swd', version: 4 });
+    const carbon = new co2({ model: 'swd', version: 4, rating: true });
     const options: SWDOptions = {
       dataReloadRatio: 0.02,
       firstVisitPercentage: 1,
@@ -48,7 +48,10 @@ app.get('/carbon', async (c) => {
     };
     const estimate = carbon.perVisitTrace(transferBytes, greenCheck.green, options);
     console.log(estimate);
-    return c.json(estimate);
+    return c.json({
+      report: estimate,
+      hosting: greenCheck,
+    });
   } else {
     return c.body('Invalid url parameter', 400);
   }

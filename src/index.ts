@@ -29,15 +29,25 @@ app.get('/carbon', async (c) => {
   const url = c.req.query('url');
   console.log(url);
   if (url) {
+    // Ensure url is an actual url
+    let domain: URL;
+    try {
+      domain = new URL(url);
+    } catch (e) {
+      return c.body('Invalid url parameter', 400);
+    }
+
     // Get size of transferred files
-    const transferBytes = await getTransferSize(url);
-    console.log('transferBytes', transferBytes);
+    let transferBytes: number;
+    try {
+      transferBytes = await getTransferSize(url);
+    } catch (e) {
+      return c.body('Error loading the page', 500);
+    }
 
     // Check if host is green
-    const domain = new URL(url);
     const res = await fetch(`https://api.thegreenwebfoundation.org/greencheck/${domain.host.replace('www.', '')}`);
     const greenCheck = await res.json();
-    console.log('greenCheck', greenCheck);
 
     // Get carbon estimate
     const carbon = new co2({ model: 'swd', version: 4, rating: true });
@@ -47,11 +57,13 @@ app.get('/carbon', async (c) => {
       returnVisitPercentage: 0,
     };
     const estimate = carbon.perVisitTrace(transferBytes, greenCheck.green, options);
-    console.log(estimate);
-    return c.json({
+
+    const result = {
       report: estimate,
       hosting: greenCheck,
-    });
+    };
+    console.log(result);
+    return c.json(result);
   } else {
     return c.body('Invalid url parameter', 400);
   }

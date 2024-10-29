@@ -21,7 +21,7 @@ interface SWDOptions {
 const app = new Hono();
 
 app.use('/*', cors());
-app.use('/*', bearerAuth({ token: process.env.TOKEN as string }));
+app.use('/carbon', bearerAuth({ token: process.env.TOKEN as string }));
 
 // https://sustainablewebdesign.org/estimating-digital-emissions/
 app.get('/carbon', async (c) => {
@@ -34,7 +34,7 @@ app.get('/carbon', async (c) => {
     try {
       domain = new URL(url);
     } catch (e) {
-      return c.body('Invalid url parameter', 400);
+      return c.text('Invalid url parameter', 400);
     }
 
     // Get size of transferred files
@@ -42,7 +42,7 @@ app.get('/carbon', async (c) => {
     try {
       transferBytes = await getTransferSize(url);
     } catch (e) {
-      return c.body('Error loading the page', 500);
+      return c.text('Error loading the page', 500);
     }
 
     // Check if host is green
@@ -65,7 +65,7 @@ app.get('/carbon', async (c) => {
     console.log(result);
     return c.json(result);
   } else {
-    return c.body('Invalid url parameter', 400);
+    return c.text('Invalid url parameter', 400);
   }
 });
 

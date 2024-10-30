@@ -23,6 +23,8 @@ const app = new Hono();
 app.use('/*', cors());
 app.use('/carbon', bearerAuth({ token: process.env.TOKEN as string }));
 
+const cache = new Map();
+
 // https://sustainablewebdesign.org/estimating-digital-emissions/
 app.get('/carbon', async (c) => {
   console.log('GET Carbon');
@@ -35,6 +37,18 @@ app.get('/carbon', async (c) => {
       domain = new URL(url);
     } catch (e) {
       return c.text('Invalid url parameter', 400);
+    }
+
+    const cachedResult = cache.get(url);
+    if (cachedResult) {
+      console.log('Found cached report');
+      if (Date.now() - cachedResult.lastUpdated > 60000 * 10) {
+        console.log('Cached report is expired');
+        cache.delete(url);
+      } else {
+        console.log('Sending cached report');
+        return c.json(cachedResult);
+      }
     }
 
     // Get size of transferred files
@@ -61,7 +75,9 @@ app.get('/carbon', async (c) => {
     const result = {
       report: estimate,
       hosting: greenCheck,
+      lastUpdated: Date.now(),
     };
+    cache.set(url, result);
     console.log(result);
     return c.json(result);
   } else {

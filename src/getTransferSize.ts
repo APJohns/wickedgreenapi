@@ -10,19 +10,24 @@ export default async function getTransferSize(url: string) {
 
   let totalTransferSize = 0;
 
-  // Enable network tracking to capture transfer sizes
-  const client = await page.createCDPSession();
-  await client.send('Network.enable');
+  try {
+    // Enable network tracking to capture transfer sizes
+    const client = await page.createCDPSession();
+    await client.send('Network.enable');
 
-  client.on('Network.loadingFinished', async (data) => {
-    if (data.encodedDataLength >= 0) {
-      totalTransferSize += data.encodedDataLength;
-    }
-  });
+    client.on('Network.loadingFinished', async (data) => {
+      if (data.encodedDataLength >= 0) {
+        totalTransferSize += data.encodedDataLength;
+      }
+    });
 
-  // Navigate to the page and wait for network activity to finish
-  await page.goto(url, { waitUntil: 'networkidle2' });
+    // Navigate to the page and wait for network activity to finish
+    await page.goto(url, { waitUntil: 'networkidle2' });
+  } catch (e) {
+    console.error(e);
+  } finally {
+    await browser.close();
+  }
 
-  await browser.close();
   return totalTransferSize;
 }

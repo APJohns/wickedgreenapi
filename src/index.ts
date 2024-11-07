@@ -28,7 +28,30 @@ const cache = new Map();
 // https://sustainablewebdesign.org/estimating-digital-emissions/
 app.get('/co2', async (c) => {
   console.log('GET CO2', c.req.url);
-  const url = c.req.query('url');
+
+  const parseQuery = (query: string | undefined): number | undefined => {
+    if (query) {
+      const parsedQuery = parseFloat(query);
+      if (isNaN(parsedQuery)) {
+        return -1;
+      } else {
+        return parsedQuery;
+      }
+    } else {
+      return undefined;
+    }
+  };
+
+  const dataCacheRatio = parseQuery(c.req.query('dataCacheRatio'));
+  if (dataCacheRatio && (dataCacheRatio < 0 || dataCacheRatio > 1)) {
+    return c.text(`Invalid dataCacheRatio: Must be between 0 and 1.`, 400);
+  }
+
+  const returnVisitorRatio = parseQuery(c.req.query('returnVisitorRatio'));
+  if (returnVisitorRatio && (returnVisitorRatio < 0 || returnVisitorRatio > 1)) {
+    return c.text(`Invalid returnVisitorRatio: Must be between 0 and 1.`, 400);
+  }
+
   const gridIntensity = {
     device: {
       country: c.req.query('device')?.toUpperCase(),
@@ -51,6 +74,7 @@ app.get('/co2', async (c) => {
     }
   }
 
+  const url = c.req.query('url');
   if (url) {
     // Ensure url is an actual url
     let domain: URL;
@@ -93,9 +117,9 @@ app.get('/co2', async (c) => {
     const carbon = new co2({ model: 'swd', version: 4, rating: true });
 
     const options: SWDOptions = {
-      dataReloadRatio: 0.02,
-      firstVisitPercentage: 1,
-      returnVisitPercentage: 0,
+      dataReloadRatio: dataCacheRatio ? dataCacheRatio : 0.02,
+      firstVisitPercentage: returnVisitorRatio ? 1 - returnVisitorRatio : 1,
+      returnVisitPercentage: returnVisitorRatio ? returnVisitorRatio : 0,
       gridIntensity: {
         ...(gridIntensity as SWDOptions['gridIntensity']),
       },

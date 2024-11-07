@@ -29,10 +29,28 @@ const cache = new Map();
 app.get('/co2', async (c) => {
   console.log('GET CO2', c.req.url);
   const url = c.req.query('url');
-  const location = c.req.query('location')?.toUpperCase();
-  if (location && !Object.keys(averageIntensity.data).includes(location)) {
-    return c.text('Invalid location code. Use an Alpha-3 ISO country code.', 400);
+  const gridIntensity = {
+    device: {
+      country: c.req.query('device')?.toUpperCase(),
+    },
+    dataCenter: {
+      country: c.req.query('dataCenter')?.toUpperCase(),
+    },
+    network: {
+      country: c.req.query('network')?.toUpperCase(),
+    },
+  };
+
+  for (const segment in gridIntensity) {
+    const country = gridIntensity[segment as keyof typeof gridIntensity].country;
+    if (!country) {
+      delete gridIntensity[segment as keyof typeof gridIntensity];
+    } else if (!Object.keys(averageIntensity.data).includes(country)) {
+      delete gridIntensity[segment as keyof typeof gridIntensity];
+      return c.text(`Invalid country code "${country}": Use an Alpha-3 ISO country code.`, 400);
+    }
   }
+
   if (url) {
     // Ensure url is an actual url
     let domain: URL;
@@ -79,27 +97,9 @@ app.get('/co2', async (c) => {
       firstVisitPercentage: 1,
       returnVisitPercentage: 0,
       gridIntensity: {
-        dataCenter: {
-          country: 'USA',
-        },
+        ...(gridIntensity as SWDOptions['gridIntensity']),
       },
     };
-
-    if (location) {
-      options.gridIntensity = {
-        device: {
-          country: location,
-        },
-      };
-
-      // Set network intensity to USA if traffic is coming from USA, since this means all network usage remains in
-      // the USA. Use global average otherwise since its impossible to know the networks used.
-      if (location === 'USA') {
-        options.gridIntensity.networks = {
-          country: 'USA',
-        };
-      }
-    }
 
     const estimate = carbon.perVisitTrace(transferBytes, greenCheck.green, options);
 
@@ -108,8 +108,9 @@ app.get('/co2', async (c) => {
       hosting: greenCheck,
       lastUpdated: Date.now(),
     };
+
     cache.set(c.req.url, result);
-    console.log(result);
+    console.log(result.report.variables.gridIntensity);
     return c.json(result);
   } else {
     return c.text('Invalid url parameter', 400);

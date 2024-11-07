@@ -21,12 +21,12 @@ interface SWDOptions {
 const app = new Hono();
 
 app.use('/*', cors());
-app.use('/carbon', bearerAuth({ token: process.env.TOKEN as string }));
+app.use('/co2', bearerAuth({ token: process.env.TOKEN as string }));
 
 const cache = new Map();
 
 // https://sustainablewebdesign.org/estimating-digital-emissions/
-app.get('/carbon', async (c) => {
+app.get('/co2', async (c) => {
   console.log('GET Carbon');
   const url = c.req.query('url');
   console.log(url);

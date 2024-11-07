@@ -42,6 +42,11 @@ app.get('/co2', async (c) => {
     }
   };
 
+  const greenHostingFactor = parseQuery(c.req.query('greenHostingFactor'));
+  if (greenHostingFactor && (greenHostingFactor < 0 || greenHostingFactor > 1)) {
+    return c.text(`Invalid greenHostingFactor: Must be between 0 and 1.`, 400);
+  }
+
   const dataCacheRatio = parseQuery(c.req.query('dataCacheRatio'));
   if (dataCacheRatio && (dataCacheRatio < 0 || dataCacheRatio > 1)) {
     return c.text(`Invalid dataCacheRatio: Must be between 0 and 1.`, 400);
@@ -109,10 +114,6 @@ app.get('/co2', async (c) => {
       return c.text('Error loading the page', 500);
     }
 
-    // Check if host is green
-    const res = await fetch(`https://api.thegreenwebfoundation.org/greencheck/${domain.host.replace('www.', '')}`);
-    const greenCheck = await res.json();
-
     // Get carbon estimate
     const carbon = new co2({ model: 'swd', version: 4, rating: true });
 
@@ -120,16 +121,37 @@ app.get('/co2', async (c) => {
       dataReloadRatio: dataCacheRatio ? dataCacheRatio : 0.02,
       firstVisitPercentage: returnVisitorRatio ? 1 - returnVisitorRatio : 1,
       returnVisitPercentage: returnVisitorRatio ? returnVisitorRatio : 0,
-      gridIntensity: {
-        ...(gridIntensity as SWDOptions['gridIntensity']),
-      },
     };
 
-    const estimate = carbon.perVisitTrace(transferBytes, greenCheck.green, options);
+    if (Object.keys(gridIntensity).length > 0) {
+      options.gridIntensity = gridIntensity as SWDOptions['gridIntensity'];
+    }
+
+    if (greenHostingFactor) {
+      options.greenHostingFactor = greenHostingFactor;
+    }
+
+    const getGreenCheck = async (): Promise<any> => {
+      // Check if host is green
+      console.log('Getting host information from greencheck API');
+      const res = await fetch(`https://api.thegreenwebfoundation.org/greencheck/${domain.host.replace('www.', '')}`);
+      return await res.json();
+    };
+
+    let hosting;
+    if (greenHostingFactor) {
+      hosting = {
+        green: greenHostingFactor === 1,
+      };
+    } else {
+      hosting = await getGreenCheck();
+    }
+
+    const estimate = carbon.perVisitTrace(transferBytes, greenHostingFactor ? undefined : hosting.green, options);
 
     const result = {
       report: estimate,
-      hosting: greenCheck,
+      hosting,
       lastUpdated: Date.now(),
     };
 

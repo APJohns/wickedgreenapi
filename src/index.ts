@@ -2,7 +2,7 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { bearerAuth } from 'hono/bearer-auth';
-import { co2 } from '@tgwf/co2';
+import { co2, averageIntensity } from '@tgwf/co2';
 import getTransferSize from './getTransferSize.js';
 import 'dotenv/config';
 
@@ -11,10 +11,10 @@ interface SWDOptions {
   firstVisitPercentage?: number;
   returnVisitPercentage?: number;
   greenHostingFactor?: number;
-  girdIntensity?: {
-    device?: number;
-    dataCenter?: number;
-    networks?: number;
+  gridIntensity?: {
+    device?: number | { country: string };
+    dataCenter?: number | { country: string };
+    networks?: number | { country: string };
   };
 }
 
@@ -30,6 +30,11 @@ app.get('/carbon', async (c) => {
   console.log('GET Carbon');
   const url = c.req.query('url');
   console.log(url);
+  const location = c.req.query('location')?.toUpperCase();
+  console.log(location);
+  if (location && !Object.keys(averageIntensity.data).includes(location)) {
+    return c.text('Invalid location code. Use an Alpha-3 ISO country code.', 400);
+  }
   if (url) {
     // Ensure url is an actual url
     let domain: URL;
@@ -70,11 +75,34 @@ app.get('/carbon', async (c) => {
 
     // Get carbon estimate
     const carbon = new co2({ model: 'swd', version: 4, rating: true });
+
     const options: SWDOptions = {
       dataReloadRatio: 0.02,
       firstVisitPercentage: 1,
       returnVisitPercentage: 0,
+      gridIntensity: {
+        dataCenter: {
+          country: 'USA',
+        },
+      },
     };
+
+    if (location) {
+      options.gridIntensity = {
+        device: {
+          country: location,
+        },
+      };
+
+      // Set network intensity to USA if traffic is coming from USA, since this means all network usage remains in
+      // the USA. Use global average otherwise since its impossible to know the networks used.
+      if (location === 'USA') {
+        options.gridIntensity.networks = {
+          country: 'USA',
+        };
+      }
+    }
+
     const estimate = carbon.perVisitTrace(transferBytes, greenCheck.green, options);
 
     const result = {

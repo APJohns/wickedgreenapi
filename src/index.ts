@@ -39,16 +39,21 @@ app.get('/carbon', async (c) => {
       return c.text('Invalid url parameter', 400);
     }
 
+    let deletedReports = 0;
+    // Check in-memory cache and delete reports older than 10 minutes
+    cache.forEach((report) => {
+      if (Date.now() - report.lastUpdated > 60000 * 10) {
+        cache.delete(url);
+        deletedReports++;
+      }
+    });
+    console.log(`Deleted ${deletedReports} expired reports from cache`);
+
+    // Check in-memory cache for url
     const cachedResult = cache.get(url);
     if (cachedResult) {
-      console.log('Found cached report');
-      if (Date.now() - cachedResult.lastUpdated > 60000 * 10) {
-        console.log('Cached report is expired');
-        cache.delete(url);
-      } else {
-        console.log('Sending cached report');
-        return c.json(cachedResult);
-      }
+      console.log('Found cached report', cachedResult);
+      return c.json(cachedResult);
     }
 
     // Get size of transferred files

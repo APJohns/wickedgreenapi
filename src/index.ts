@@ -156,7 +156,7 @@ app.get('/co2', async (c) => {
     };
 
     cache.set(c.req.url, result);
-    console.log(result.report.variables.gridIntensity);
+    console.log(result);
     return c.json(result);
   } else {
     return c.text('Invalid url parameter', 400);

@@ -27,11 +27,9 @@ const cache = new Map();
 
 // https://sustainablewebdesign.org/estimating-digital-emissions/
 app.get('/co2', async (c) => {
-  console.log('GET Carbon');
+  console.log('GET CO2', c.req.url);
   const url = c.req.query('url');
-  console.log(url);
   const location = c.req.query('location')?.toUpperCase();
-  console.log(location);
   if (location && !Object.keys(averageIntensity.data).includes(location)) {
     return c.text('Invalid location code. Use an Alpha-3 ISO country code.', 400);
   }
@@ -48,14 +46,14 @@ app.get('/co2', async (c) => {
     // Check in-memory cache and delete reports older than 10 minutes
     cache.forEach((report) => {
       if (Date.now() - report.lastUpdated > 60000 * 10) {
-        cache.delete(url);
+        cache.delete(c.req.url);
         deletedReports++;
       }
     });
     console.log(`Deleted ${deletedReports} expired reports from cache`);
 
     // Check in-memory cache for url
-    const cachedResult = cache.get(url);
+    const cachedResult = cache.get(c.req.url);
     if (cachedResult) {
       console.log('Found cached report', cachedResult);
       return c.json(cachedResult);
@@ -110,7 +108,7 @@ app.get('/co2', async (c) => {
       hosting: greenCheck,
       lastUpdated: Date.now(),
     };
-    cache.set(url, result);
+    cache.set(c.req.url, result);
     console.log(result);
     return c.json(result);
   } else {

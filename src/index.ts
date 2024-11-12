@@ -2,26 +2,15 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { bearerAuth } from 'hono/bearer-auth';
-import { co2, averageIntensity } from '@tgwf/co2';
-import getTransferSize from './getTransferSize.js';
+import { averageIntensity } from '@tgwf/co2';
+import { createClient } from '@supabase/supabase-js';
+import { getCO2, type Options } from './getCO2.js';
 import 'dotenv/config';
-
-interface SWDOptions {
-  dataReloadRatio?: number;
-  firstVisitPercentage?: number;
-  returnVisitPercentage?: number;
-  greenHostingFactor?: number;
-  gridIntensity?: {
-    device?: number | { country: string };
-    dataCenter?: number | { country: string };
-    networks?: number | { country: string };
-  };
-}
 
 const app = new Hono();
 
 app.use('/*', cors());
-app.use('/co2', bearerAuth({ token: process.env.TOKEN as string }));
+app.use('/co2/*', bearerAuth({ token: process.env.TOKEN as string }));
 
 const cache = new Map();
 
@@ -82,9 +71,8 @@ app.get('/co2', async (c) => {
   const url = c.req.query('url');
   if (url) {
     // Ensure url is an actual url
-    let domain: URL;
     try {
-      domain = new URL(url);
+      new URL(url);
     } catch (e) {
       return c.text('Invalid url parameter', 400);
     }
@@ -106,61 +94,44 @@ app.get('/co2', async (c) => {
       return c.json(cachedResult);
     }
 
-    // Get size of transferred files
-    let transferBytes: number;
-    try {
-      transferBytes = await getTransferSize(url);
-    } catch (e) {
-      return c.text('Error loading the page', 500);
-    }
-
-    // Get carbon estimate
-    const carbon = new co2({ model: 'swd', version: 4, rating: true });
-
-    const options: SWDOptions = {
-      dataReloadRatio: dataCacheRatio ? dataCacheRatio : 0.02,
-      firstVisitPercentage: returnVisitorRatio ? 1 - returnVisitorRatio : 1,
-      returnVisitPercentage: returnVisitorRatio ? returnVisitorRatio : 0,
+    const options: Options = {
+      dataCacheRatio: dataCacheRatio ? dataCacheRatio : 0.02,
+      returnVisitorRatio: returnVisitorRatio ? returnVisitorRatio : 0,
     };
 
     if (Object.keys(gridIntensity).length > 0) {
-      options.gridIntensity = gridIntensity as SWDOptions['gridIntensity'];
+      options.gridIntensity = gridIntensity as Options['gridIntensity'];
     }
 
     if (greenHostingFactor) {
       options.greenHostingFactor = greenHostingFactor;
     }
 
-    const getGreenCheck = async (): Promise<any> => {
-      // Check if host is green
-      console.log('Getting host information from greencheck API');
-      const res = await fetch(`https://api.thegreenwebfoundation.org/greencheck/${domain.host.replace('www.', '')}`);
-      return await res.json();
-    };
-
-    let hosting;
-    if (greenHostingFactor) {
-      hosting = {
-        green: greenHostingFactor === 1,
-      };
-    } else {
-      hosting = await getGreenCheck();
+    const co2Report = await getCO2(url, options);
+    if (co2Report.error) {
+      return c.text(co2Report.error.message, co2Report.error.code);
     }
 
-    const estimate = carbon.perVisitTrace(transferBytes, greenHostingFactor ? undefined : hosting.green, options);
-
-    const result = {
-      report: estimate,
-      hosting,
-      lastUpdated: Date.now(),
-    };
-
-    cache.set(c.req.url, result);
-    console.log(result);
-    return c.json(result);
+    cache.set(c.req.url, co2Report.data);
+    return c.json(co2Report.data);
   } else {
     return c.text('Invalid url parameter', 400);
   }
+});
+
+app.get('/co2/gather', async (c) => {
+  const SUPABASE_URL = 'https://nrbuiyvrhjmyjrpqzwdu.supabase.co';
+  const supabase = createClient(SUPABASE_URL, process.env.SERVICE_KEY as string);
+  const { data, error } = await supabase.from('urls').select();
+  if (error) {
+    console.error(error);
+  }
+
+  data?.forEach((url) => {
+    getCO2(url.url);
+  });
+
+  return c.text('Gathering');
 });
 
 const port = 3000;

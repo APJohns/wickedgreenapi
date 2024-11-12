@@ -112,6 +112,7 @@ app.get('/co2', async (c) => {
       return c.text(co2Report.error.message, co2Report.error.code);
     }
 
+    console.log(co2Report.data);
     cache.set(c.req.url, co2Report.data);
     return c.json(co2Report.data);
   } else {
@@ -125,12 +126,15 @@ app.get('/co2/gather', async (c) => {
   if (error) {
     console.error(error);
   }
+  if (data) {
+    console.log(`Gathering reports for ${data.length} URLs`);
+  }
 
-  data?.forEach((url) => {
-    getCO2(url.url);
+  data?.forEach(async (url) => {
+    await getCO2(url.url);
   });
 
-  return c.text('Gathering');
+  return c.text(`Gathering reports for ${data?.length ? data.length : 0} URLs`);
 });
 
 const port = 3000;

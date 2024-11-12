@@ -87,7 +87,6 @@ export async function getCO2(url: string, options?: Options) {
     lastUpdated: Date.now(),
   };
 
-  console.log(result);
   return {
     data: result,
   };

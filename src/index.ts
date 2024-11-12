@@ -120,8 +120,7 @@ app.get('/co2', async (c) => {
 });
 
 app.get('/co2/gather', async (c) => {
-  const SUPABASE_URL = 'https://nrbuiyvrhjmyjrpqzwdu.supabase.co';
-  const supabase = createClient(SUPABASE_URL, process.env.SERVICE_KEY as string);
+  const supabase = createClient(process.env.SUPABASE_URL as string, process.env.SERVICE_KEY as string);
   const { data, error } = await supabase.from('urls').select();
   if (error) {
     console.error(error);

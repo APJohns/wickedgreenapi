@@ -128,11 +128,10 @@ app.get('/co2/gather', async (c) => {
   }
   if (data) {
     console.log(`Gathering reports for ${data.length} URLs`);
+    for (const u of data) {
+      await getCO2(u.url);
+    }
   }
-
-  data?.forEach(async (url) => {
-    await getCO2(url.url);
-  });
 
   return c.text(`Gathering reports for ${data?.length ? data.length : 0} URLs`);
 });

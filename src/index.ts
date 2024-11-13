@@ -2,9 +2,10 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { bearerAuth } from 'hono/bearer-auth';
-import { averageIntensity } from '@tgwf/co2';
 import { createClient } from '@supabase/supabase-js';
+import { averageIntensity } from '@tgwf/co2';
 import { getCO2, type Options } from './getCO2.js';
+import gatherReports from './gatherReports.js';
 import 'dotenv/config';
 
 const app = new Hono();
@@ -128,9 +129,7 @@ app.get('/co2/gather', async (c) => {
   }
   if (data) {
     console.log(`Gathering reports for ${data.length} URLs`);
-    for (const u of data) {
-      await getCO2(u.url);
-    }
+    gatherReports(data, supabase);
   }
 
   return c.text(`Gathering reports for ${data?.length ? data.length : 0} URLs`);

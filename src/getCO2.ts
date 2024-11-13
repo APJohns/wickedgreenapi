@@ -1,8 +1,10 @@
 import { co2 } from '@tgwf/co2';
 import getTransferSize from './getTransferSize.js';
 import type { StatusCode } from 'hono/utils/http-status';
+import type { Report } from './types.js';
 
 export interface Options {
+  skipGreenCheck?: boolean;
   dataCacheRatio?: number;
   returnVisitorRatio?: number;
   greenHostingFactor?: number;
@@ -26,7 +28,8 @@ export interface SWDOptions {
   };
 }
 
-export async function getCO2(url: string, options?: Options) {
+export async function getCO2(url: string, options: Options = {}) {
+  const { skipGreenCheck, ...modelOptions } = options;
   // Get size of transferred files
   let transferBytes: number;
   try {
@@ -72,17 +75,19 @@ export async function getCO2(url: string, options?: Options) {
       green: options.greenHostingFactor === 1,
     };
   } else {
-    hosting = await getGreenCheck();
+    if (!skipGreenCheck) {
+      hosting = await getGreenCheck();
+    }
   }
 
   const estimate = carbon.perVisitTrace(
     transferBytes,
-    options?.greenHostingFactor ? undefined : hosting.green,
+    options?.greenHostingFactor || skipGreenCheck ? undefined : hosting.green,
     co2Options
   );
 
   const result = {
-    report: estimate,
+    report: estimate as unknown as Report,
     hosting,
     lastUpdated: Date.now(),
   };

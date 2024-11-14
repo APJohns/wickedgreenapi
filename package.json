@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.13.2",
+    "@supabase/supabase-js": "^2.46.1",
     "@tgwf/co2": "^0.16.1",
     "dotenv": "^16.4.5",
     "hono": "^4.6.6",

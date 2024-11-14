@@ -2,9 +2,9 @@ import puppeteer from 'puppeteer';
 
 export default async function getTransferSize(url: string) {
   let totalTransferSize = 0;
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({ headless: true, args: ['--incognito'] });
   try {
-    const page = await browser.newPage();
+    const page = (await browser.pages())[0];
     await page.setViewport({ width: 1900, height: 1000 });
 
     // Enable network tracking to capture transfer sizes

@@ -4,7 +4,7 @@ import { getCO2 } from './getCO2.js';
 export default async function gatherReports(urls: any[], supabase: SupabaseClient) {
   for (const u of urls) {
     const { data, error } = await getCO2(u.url, {
-      skipGreenCheck: true,
+      greenHostingFactor: u.green_hosting_factor,
     });
     if (error) {
       console.error(error);

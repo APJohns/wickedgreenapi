@@ -11,6 +11,7 @@ export default async function gatherReports(urls: any[], supabase: SupabaseClien
     }
     const { error: dbError } = await supabase.from('reports').insert({
       url_id: u.id,
+      project_id: u.projects.id,
       user_id: u.user_id,
       co2: data?.report.co2.total,
       rating: data?.report.co2.rating,

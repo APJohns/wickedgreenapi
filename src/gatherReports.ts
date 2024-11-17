@@ -2,7 +2,25 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { getCO2 } from './getCO2.js';
 
 export default async function gatherReports(urls: any[], supabase: SupabaseClient) {
+  let lastUser = '';
+  let batchID = '';
   for (const u of urls) {
+    if (u.user_id !== lastUser) {
+      const today = new Date();
+      const { data: batch } = await supabase
+        .from('batches')
+        .insert({
+          date: `${today.getUTCFullYear()}-${today.getUTCMonth()}-${today.getUTCDate()}`,
+          user_id: u.user_id,
+          project_id: u.projects.id,
+        })
+        .select()
+        .single();
+      if (batch) {
+        batchID = batch.id;
+      }
+      lastUser = u.user_id;
+    }
     const { data, error } = await getCO2(u.url, {
       greenHostingFactor: u.green_hosting_factor,
     });
@@ -11,8 +29,8 @@ export default async function gatherReports(urls: any[], supabase: SupabaseClien
     }
     const { error: dbError } = await supabase.from('reports').insert({
       url_id: u.id,
-      project_id: u.projects.id,
       user_id: u.user_id,
+      batch_id: batchID,
       co2: data?.report.co2.total,
       rating: data?.report.co2.rating,
       bytes: data?.report.variables.bytes,

@@ -29,6 +29,9 @@ export interface SWDOptions {
 }
 
 export async function getCO2(url: string, options: Options = {}) {
+  const isRatioValid = (value: number | undefined) => {
+    return value !== undefined && (value >= 0 || value <= 1);
+  };
   const { skipGreenCheck, ...modelOptions } = options;
   // Get size of transferred files
   let transferBytes: number;
@@ -47,16 +50,16 @@ export async function getCO2(url: string, options: Options = {}) {
   const carbon = new co2({ model: 'swd', version: 4, rating: true });
 
   const co2Options: SWDOptions = {
-    dataReloadRatio: options?.dataCacheRatio ? options.dataCacheRatio : 0.02,
-    firstVisitPercentage: options?.returnVisitorRatio ? 1 - options.returnVisitorRatio : 1,
-    returnVisitPercentage: options?.returnVisitorRatio ? options.returnVisitorRatio : 0,
+    dataReloadRatio: isRatioValid(options.dataCacheRatio) ? options.dataCacheRatio : 0.02,
+    firstVisitPercentage: isRatioValid(options.returnVisitorRatio) ? 1 - options.returnVisitorRatio! : 1,
+    returnVisitPercentage: isRatioValid(options.returnVisitorRatio) ? options.returnVisitorRatio : 0,
   };
 
   if (Object.keys(options?.gridIntensity || {}).length > 0) {
     co2Options.gridIntensity = options?.gridIntensity as SWDOptions['gridIntensity'];
   }
 
-  if (options?.greenHostingFactor) {
+  if (isRatioValid(options.greenHostingFactor)) {
     co2Options.greenHostingFactor = options.greenHostingFactor;
   }
 
@@ -70,7 +73,7 @@ export async function getCO2(url: string, options: Options = {}) {
   };
 
   let hosting;
-  if (options?.greenHostingFactor) {
+  if (isRatioValid(options.greenHostingFactor)) {
     hosting = {
       green: options.greenHostingFactor === 1,
     };
@@ -82,7 +85,7 @@ export async function getCO2(url: string, options: Options = {}) {
 
   const estimate = carbon.perVisitTrace(
     transferBytes,
-    options?.greenHostingFactor || skipGreenCheck ? undefined : hosting.green,
+    isRatioValid(options.greenHostingFactor) || skipGreenCheck ? undefined : hosting.green,
     co2Options
   );
 

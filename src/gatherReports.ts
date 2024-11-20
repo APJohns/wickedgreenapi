@@ -2,10 +2,10 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { getCO2 } from './getCO2.js';
 
 export default async function gatherReports(urls: any[], supabase: SupabaseClient) {
-  let lastUser = '';
+  let lastProject = '';
   let batchID = '';
   for (const u of urls) {
-    if (u.user_id !== lastUser) {
+    if (u.project_id !== lastProject) {
       const today = new Date();
       const { data: batch } = await supabase
         .from('batches')
@@ -19,7 +19,7 @@ export default async function gatherReports(urls: any[], supabase: SupabaseClien
       if (batch) {
         batchID = batch.id;
       }
-      lastUser = u.user_id;
+      lastProject = u.project_id;
     }
     const { data, error } = await getCO2(u.url, {
       greenHostingFactor: u.green_hosting_factor,

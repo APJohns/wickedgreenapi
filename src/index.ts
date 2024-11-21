@@ -7,6 +7,7 @@ import { averageIntensity } from '@tgwf/co2';
 import { getCO2, type Options } from './getCO2.js';
 import gatherReports from './gatherReports.js';
 import 'dotenv/config';
+import type { Database } from 'database.types.js';
 
 const app = new Hono();
 
@@ -121,18 +122,9 @@ app.get('/co2', async (c) => {
   }
 });
 
-app.get('/co2/gather', async (c) => {
-  const supabase = createClient(process.env.SUPABASE_URL as string, process.env.SUPABASE_SERVICE_KEY as string);
-  const { data, error } = await supabase.from('urls').select('*, projects(id)').order('project_id');
-  if (error) {
-    console.error(error);
-  }
-  if (data) {
-    console.log(`Gathering reports for ${data.length} URLs`);
-    gatherReports(data, supabase);
-  }
-
-  return c.text(`Gathering reports for ${data?.length ? data.length : 0} URLs`);
+app.get('/co2/gather', (c) => {
+  gatherReports();
+  return c.text(`Gathering reports for URLs`);
 });
 
 const port = 3000;

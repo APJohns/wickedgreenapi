@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node ./dist/index.js",
-    "build": "tsc && tsc-alias"
+    "build": "tsc && tsc-alias",
+    "gen-types": "bun run supabase gen types --lang=typescript --project-id nrbuiyvrhjmyjrpqzwdu --schema public > database.types.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.2",
@@ -17,6 +18,7 @@
   "devDependencies": {
     "@types/node": "^22.7.9",
     "@types/tgwf__co2": "^0.14.2",
+    "supabase": "^1.223.10",
     "tsc-alias": "^1.8.10",
     "tsx": "^4.7.1",
     "typescript": "^5.6.3"

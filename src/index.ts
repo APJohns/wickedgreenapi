@@ -2,12 +2,10 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { bearerAuth } from 'hono/bearer-auth';
-import { createClient } from '@supabase/supabase-js';
 import { averageIntensity } from '@tgwf/co2';
 import { getCO2, type Options } from './getCO2.js';
 import gatherReports from './gatherReports.js';
 import 'dotenv/config';
-import type { Database } from 'database.types.js';
 
 const app = new Hono();
 

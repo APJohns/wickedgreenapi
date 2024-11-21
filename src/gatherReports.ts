@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { getCO2 } from './getCO2.js';
-import type { Database, Tables } from 'database.types.js';
+import type { Database, Tables } from './database.types.js';
 
 interface URL extends Tables<'urls'> {
   projects: Pick<Tables<'projects'>, 'id' | 'report_frequency'> | null;

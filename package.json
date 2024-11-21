@@ -5,7 +5,7 @@
     "dev": "tsx watch src/index.ts",
     "start": "node ./dist/index.js",
     "build": "tsc && tsc-alias",
-    "gen-types": "bun run supabase gen types --lang=typescript --project-id nrbuiyvrhjmyjrpqzwdu --schema public > database.types.ts"
+    "gen-types": "bun run supabase gen types --lang=typescript --project-id nrbuiyvrhjmyjrpqzwdu --schema public > src/database.types.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.2",

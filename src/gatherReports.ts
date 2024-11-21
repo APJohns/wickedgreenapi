@@ -84,13 +84,13 @@ export default async function gatherReports() {
           break;
         case 'weekly':
           // Run on Mondays
-          if (new Date().getDay() === 1) {
+          if (new Date().getUTCDay() === 1) {
             await getReport(u);
           }
           break;
         case 'monthly':
           // Run every first day of the month
-          if (new Date().getDate() === 1) {
+          if (new Date().getUTCDate() === 1) {
             await getReport(u);
           }
           break;

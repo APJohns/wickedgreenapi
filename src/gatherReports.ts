@@ -27,11 +27,9 @@ export default async function gatherReports() {
   async function getReport(url: URL) {
     if (url.projects) {
       if (url.project_id !== lastProject) {
-        const today = new Date();
         const { data: batch } = await supabase
           .from('batches')
           .insert({
-            date: `${today.getUTCFullYear()}-${today.getUTCMonth()}-${today.getUTCDate()}`,
             user_id: url.user_id,
             project_id: url.projects.id,
           })

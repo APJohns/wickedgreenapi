@@ -121,6 +121,11 @@ app.get('/co2', async (c) => {
 });
 
 app.get('/co2/gather', (c) => {
+  const projectID = c.req.query('project_id');
+  const userID = c.req.query('user_id');
+  if (projectID && userID) {
+    gatherReports(projectID, userID);
+  }
   gatherReports();
   return c.text(`Gathering reports for URLs`);
 });

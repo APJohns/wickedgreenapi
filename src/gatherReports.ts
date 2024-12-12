@@ -1,21 +1,33 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { getCO2 } from './getCO2.js';
-import type { Database, Tables } from './database.types.js';
+import type { Database, Tables, TablesInsert } from './database.types.js';
 
 interface URL extends Tables<'urls'> {
   projects: Pick<Tables<'projects'>, 'id' | 'report_frequency'> | null;
 }
 
-export default async function gatherReports() {
+export default async function gatherReports(projectID?: string, userID?: string) {
   let lastProject = '';
   let batchID = '';
-  let reportCount = 0;
 
   const supabase = createClient<Database>(
     process.env.SUPABASE_URL as string,
     process.env.SUPABASE_SERVICE_KEY as string
   );
-  const { data, error } = await supabase.from('urls').select('*, projects(id, report_frequency)').order('project_id');
+
+  async function getURLs() {
+    if (projectID && userID) {
+      return await supabase
+        .from('urls')
+        .select('*, projects(id, report_frequency)')
+        .eq('user_id', userID)
+        .eq('project_id', projectID);
+    } else {
+      return await supabase.from('urls').select('*, projects(id, report_frequency)').order('project_id');
+    }
+  }
+
+  const { data, error } = await getURLs();
   if (error) {
     console.error(error);
     return null;
@@ -23,6 +35,8 @@ export default async function gatherReports() {
   if (!data) {
     return null;
   }
+
+  const reports: TablesInsert<'reports'>[] = [];
 
   async function getReport(url: URL) {
     if (url.projects) {
@@ -32,6 +46,7 @@ export default async function gatherReports() {
           .insert({
             user_id: url.user_id,
             project_id: url.projects.id,
+            source: userID && projectID ? 'manual' : 'auto',
           })
           .select()
           .single();
@@ -47,7 +62,7 @@ export default async function gatherReports() {
         console.error(error);
       }
       if (data) {
-        const { error: dbError } = await supabase.from('reports').insert({
+        reports.push({
           url_id: url.id,
           user_id: url.user_id,
           batch_id: batchID,
@@ -63,12 +78,6 @@ export default async function gatherReports() {
             network: data.report.variables.gridIntensity.network,
           },
         });
-
-        if (dbError) {
-          console.error(error);
-        } else {
-          reportCount++;
-        }
       }
     }
   }
@@ -76,27 +85,38 @@ export default async function gatherReports() {
   console.log(`Gathering reports for ${data.length} URLs`);
   for (const u of data) {
     if (u.projects) {
-      switch (u.projects.report_frequency) {
-        case 'daily':
-          await getReport(u);
-          break;
-        case 'weekly':
-          // Run on Mondays
-          if (new Date().getUTCDay() === 1) {
+      if (userID && projectID) {
+        await getReport(u);
+      } else {
+        switch (u.projects.report_frequency) {
+          case 'daily':
             await getReport(u);
-          }
-          break;
-        case 'monthly':
-          // Run every first day of the month
-          if (new Date().getUTCDate() === 1) {
-            await getReport(u);
-          }
-          break;
+            break;
+          case 'weekly':
+            // Run on Mondays
+            if (new Date().getUTCDay() === 1) {
+              await getReport(u);
+            }
+            break;
+          case 'monthly':
+            // Run every first day of the month
+            if (new Date().getUTCDate() === 1) {
+              await getReport(u);
+            }
+            break;
 
-        default:
-          break;
+          default:
+            break;
+        }
       }
     }
   }
-  console.log(`Successfully gathered ${reportCount} reports`);
+
+  const { error: dbError } = await supabase.from('reports').insert(reports);
+
+  if (dbError) {
+    console.error(error);
+  } else {
+    console.log(`Successfully gathered ${reports.length} reports`);
+  }
 }

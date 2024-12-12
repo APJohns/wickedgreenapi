@@ -14,18 +14,21 @@ export type Database = {
           created_at: string
           id: string
           project_id: string
+          source: string
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
           project_id: string
+          source?: string
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
           project_id?: string
+          source?: string
           user_id?: string
         }
         Relationships: [
@@ -37,6 +40,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      permissions: {
+        Row: {
+          plan: string
+          user_id: string
+        }
+        Insert: {
+          plan?: string
+          user_id: string
+        }
+        Update: {
+          plan?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       projects: {
         Row: {

@@ -55,27 +55,27 @@ export default async function gatherReports(projectID?: string, userID?: string)
         }
         lastProject = url.project_id;
       }
-      const { data, error } = await getCO2(url.url, {
+      const { report, error } = await getCO2(url.url, {
         greenHostingFactor: url.green_hosting_factor,
       });
       if (error) {
         console.error(error);
       }
-      if (data) {
+      if (report) {
         reports.push({
           url_id: url.id,
           user_id: url.user_id,
           batch_id: batchID,
-          co2: data.report.co2.total,
-          rating: data.report.co2.rating || '',
-          bytes: data.report.variables.bytes,
-          data_cache_ratio: data.report.variables.dataReloadRatio,
-          return_visitor_ratio: data.report.variables.returnVisitPercentage,
-          green_hosting_factor: data.report.variables.greenHostingFactor,
+          co2: report.co2.total,
+          rating: report.co2.rating || '',
+          bytes: report.variables.bytes,
+          data_cache_ratio: report.variables.dataReloadRatio,
+          return_visitor_ratio: report.variables.returnVisitPercentage,
+          green_hosting_factor: report.variables.greenHostingFactor,
           grid_intensity: {
-            device: data.report.variables.gridIntensity.device,
-            dataCenter: data.report.variables.gridIntensity.dataCenter,
-            network: data.report.variables.gridIntensity.network,
+            device: report.variables.gridIntensity.device,
+            dataCenter: report.variables.gridIntensity.dataCenter,
+            network: report.variables.gridIntensity.network,
           },
         });
       }

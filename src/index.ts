@@ -112,9 +112,9 @@ app.get('/co2', async (c) => {
       return c.text(co2Report.error.message, co2Report.error.code);
     }
 
-    console.log(co2Report.data);
-    cache.set(c.req.url, co2Report.data);
-    return c.json(co2Report.data);
+    console.log(co2Report);
+    cache.set(c.req.url, co2Report);
+    return c.json(co2Report);
   } else {
     return c.text('Invalid url parameter', 400);
   }

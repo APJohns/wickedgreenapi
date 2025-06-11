@@ -87,10 +87,11 @@ export async function getCO2(url: string, options: Options = {}) {
           console.error(`Error: type: ${err.name}, message: ${err.message}`);
         }
       }
+      return undefined;
     }
   };
 
-  let hosting;
+  let hosting = undefined;
   if (isRatioValid(options.greenHostingFactor)) {
     hosting = {
       green: options.greenHostingFactor === 1,
@@ -103,7 +104,7 @@ export async function getCO2(url: string, options: Options = {}) {
 
   const estimate = carbon.perVisitTrace(
     requestData.totalTransferSize,
-    isRatioValid(options.greenHostingFactor) || skipGreenCheck ? undefined : hosting.green,
+    isRatioValid(options.greenHostingFactor) || hosting === undefined ? undefined : hosting.green,
     co2Options
   );
 

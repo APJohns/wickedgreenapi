@@ -66,10 +66,28 @@ export async function getCO2(url: string, options: Options = {}) {
   const getGreenCheck = async (): Promise<any> => {
     // Check if host is green
     console.log('Getting host information from greencheck API');
-    const res = await fetch(
-      `https://api.thegreenwebfoundation.org/greencheck/${new URL(url).host.replace('www.', '')}`
-    );
-    return await res.json();
+    try {
+      const res = await fetch(
+        `https://api.thegreenwebfoundation.org/greencheck/${new URL(url).host.replace('www.', '')}`,
+        { signal: AbortSignal.timeout(5000) }
+      );
+      return await res.json();
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        if (err.name === 'TimeoutError') {
+          // This exception is from the abort signal
+          console.error('Timeout: It took more than 5 seconds to get the result!');
+        } else if (err.name === 'AbortError') {
+          // This exception is from the fetch itself
+          console.error('Fetch aborted by user action (browser stop button, closing tab, etc.');
+        } else if (err.name === 'TypeError') {
+          console.error('AbortSignal.timeout() method is not supported');
+        } else {
+          // A network error, or some other problem.
+          console.error(`Error: type: ${err.name}, message: ${err.message}`);
+        }
+      }
+    }
   };
 
   let hosting;

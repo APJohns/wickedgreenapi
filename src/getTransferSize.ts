@@ -18,7 +18,7 @@ export default async function getTransferSize(url: string): Promise<RequestData>
   const browser = await puppeteer.launch({ headless: true, args: ['--incognito'] });
   try {
     const page = (await browser.pages())[0];
-    await page.setViewport({ width: 1900, height: 1000 });
+    await page.setViewport({ width: 1440, height: 820 });
 
     // Enable network tracking to capture transfer sizes
     const client = await page.createCDPSession();
